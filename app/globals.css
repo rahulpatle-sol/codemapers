@@ -1,6 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* globals.css */
+html, body {
+  scroll-behavior: smooth;
+}
+
 
 :root {
   --background: #ffffff;
@@ -18,4 +23,33 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* globals.css */
+.code-editor-container {
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 20px;
+}
+
+.terminal-container {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #111;
+  border-radius: 8px;
+}
+
+button {
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #1d4ed8;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }

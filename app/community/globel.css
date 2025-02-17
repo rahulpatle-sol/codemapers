@@ -1,0 +1,33 @@
+/* globals.css */
+.community-container {
+    padding: 20px;
+    min-height: 100vh;
+    background-color: #1f2937;
+  }
+  
+  .video-card {
+    background-color: #2d3748;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  iframe {
+    border-radius: 8px;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+    color: #ffffff;
+  }
+  
+  p {
+    color: #a0aec0;
+  }
+  
