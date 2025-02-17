@@ -1,5 +1,7 @@
 // components/Footer.js
 export default function Footer() {
+
+  // Footer content goes here...
     return (
       <footer className="bg-gray-800 text-white py-6">
         <div className="container mx-auto text-center">
