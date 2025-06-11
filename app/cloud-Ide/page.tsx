@@ -208,14 +208,16 @@ export default function CloudIDE() {
               💾 Save
             </button>
             <div className="mt-6 bg-[#1a1d23] rounded p-4 shadow-inner overflow-auto">
-  <h2 className="text-lg mb-2 text-green-400 font-semibold">📦 Output:</h2>
-  <pre className="text-green-300 whitespace-pre-wrap text-sm">{output}</pre>
+ 
 </div>
 
+
           </div>
+           <h2 className="text-lg mb-2 text-green-400 font-semibold">📦 Output:</h2>
+  <pre className="text-green-300 whitespace-pre-wrap text-sm">{output}</pre>
 
           {/* Terminal at Bottom */}
-          <div className="mt-4 bg-black border border-cyan-600 rounded h-[200px] overflow-hidden">
+          <div className="mt-4 bg-indigo-300border border-cyan-600 rounded h-[200px] overflow-hidden">
   <TerminalUI />
 </div>
 

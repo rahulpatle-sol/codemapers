@@ -14,7 +14,7 @@ export default function Login() {
     <div className="flex items-center justify-center h-screen bg-gray-900">
       <div className="bg-white/10 backdrop-blur-lg rounded-lg p-8 max-w-sm w-full text-center border border-white/20 shadow-lg">
         <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
-        <p className="mt-2 text-gray-300">Sign in to access your account</p>
+        <p className="mt-2 text-gray-300">Sign  in to  start code 👨‍💻</p>
 
         <button
           onClick={() => signIn("github")}

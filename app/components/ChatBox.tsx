@@ -1,12 +1,15 @@
 "use client";
-import { useState } from "react";
-import { MessageCircle, Loader2 } from "lucide-react"; // Icons
+import { useState, useRef } from "react";
+import { MessageCircle, Loader2 } from "lucide-react";
 
 export default function ChatSupport() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [chat, setChat] = useState<{ sender: string; message: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [size, setSize] = useState({ width: 350, height: 500 });
+
+  const resizerRef = useRef<HTMLDivElement>(null);
 
   const sendMessage = async () => {
     if (!input) return;
@@ -24,10 +27,31 @@ export default function ChatSupport() {
       const data = await res.json();
       setChat([...chat, { sender: "👤 You", message: input }, { sender: "Bhagi AI", message: data.reply }]);
     } catch (error) {
-      setChat([...chat, { sender: "👤 You", message: input }, { sender: "Bhagi  AI", message: "Failed to respond" }]);
+      setChat([...chat, { sender: "👤 You", message: input }, { sender: "Bhagi AI", message: "Failed to respond" }]);
     }
 
     setLoading(false);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = size.width;
+    const startHeight = size.height;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const newWidth = startWidth + (event.clientX - startX);
+      const newHeight = startHeight + (event.clientY - startY);
+      setSize({ width: Math.max(300, newWidth), height: Math.max(400, newHeight) });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   };
 
   return (
@@ -39,10 +63,13 @@ export default function ChatSupport() {
       )}
 
       {open && (
-        <div className="w-80 h-[500px] bg-[#0a0a0a] text-white shadow-xl rounded-xl flex flex-col overflow-hidden border border-[#00f3ff]">
+        <div
+          className="bg-[#0a0a0a] text-white shadow-xl rounded-xl flex flex-col overflow-hidden border border-[#00f3ff]"
+          style={{ width: `${size.width}px`, height: `${size.height}px` }}
+        >
           {/* Header */}
           <div className="bg-[#00f3ff] text-black p-3 flex justify-between items-center shadow-neon">
-            <h2 className="font-bold tracking-wide text-lg">⚡ Chat With Bhagi  AI 🧘</h2>
+            <h2 className="font-bold tracking-wide text-lg">⚡ Chat With Bhagi AI 🧘</h2>
             <button onClick={() => setOpen(false)} className="text-black text-xl hover:text-gray-700 transition">
               ×
             </button>
@@ -62,6 +89,9 @@ export default function ChatSupport() {
               </div>
             )}
           </div>
+
+          {/* Resizable Handle */}
+          <div ref={resizerRef} onMouseDown={handleMouseDown} className="w-full h-2 bg-[#00f3ff] cursor-ns-resize"></div>
 
           {/* Input */}
           <div className="flex border-t p-2 bg-[#1a1a1a]">
