@@ -11,12 +11,30 @@ import Provider from 'app/client-provider';
 import Navbar from "./components/Navbar";
 import FooterSection from "./components/Footer";
 export const metadata: Metadata = {
-  title: "codemapers",
-  description: "learn and code ",
+  title: "Codemapers - Cloud IDE & PC Rental",
+  description: "Codemapers provides a powerful cloud-based IDE for coding and seamless PC rental services.",
+  keywords: ["cloud IDE", "online coding platform", "PC rental service", "remote development", "coding workspace", "virtual machines", "programming tools"],
+  authors: [{ name: "Codemapers Team", url: "https://codemapers.vercel.app" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: "./favicon.ico",
+  },
+  openGraph: {
+    title: "Codemapers - Cloud IDE & PC Rental",
+    description: "Access a high-performance cloud IDE and rent powerful PCs for development anytime, anywhere.",
+    url: "https://codemapers.com",
+    siteName: "Codemapers",
+    type: "website",
+    
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@codemapers",
+    title: "Codemapers - Cloud IDE & PC Rental",
+    description: "Cloud-based coding IDE and PC rental for remote developers.",
+ 
   },
 };
+
 
 
 
