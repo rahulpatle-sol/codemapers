@@ -1,1 +1,1 @@
-print('Hello Python! from codemappers by  bahgi  ai')
+print("Hello Python!")
