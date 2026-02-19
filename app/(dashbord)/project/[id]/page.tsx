@@ -110,7 +110,14 @@ export default function FinalIDE({ params }: FinalIDEProps) {
         
         <main className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 bg-black">
-            <MonacoEditor code={files[0]?.content || ""} />
+            // Is line ko replace karo:
+<MonacoEditor 
+  code={files[0]?.content || ""} 
+  onChange={(value) => {
+    // Agar future mein auto-save chahiye toh yahan logic daal sakte hain
+    console.log("Editor content updated");
+  }} 
+/>
           </div>
           <div className="h-48 border-t border-white/5 bg-black p-4 relative">
              <div className="text-[9px] text-zinc-600 mb-2 flex items-center gap-2 font-mono uppercase">
