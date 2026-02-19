@@ -2,75 +2,51 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#020202] relative overflow-hidden font-sans">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#e8e4d9] relative overflow-hidden">
       
-      {/* 🌌 High-End Animated Background (Nebula Vibe) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Deep Purple Orb */}
-        <motion.div 
-          animate={{ 
-            x: [0, 50, 0],
-            y: [0, 30, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-purple-600/10 blur-[140px]" 
-        />
+      {/* 📜 Texture & Paper Effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Real Paper Texture Overlay */}
+        <div className="absolute inset-0 opacity-[0.03] mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')]"></div>
         
-        {/* Electric Blue Orb */}
-        <motion.div 
-          animate={{ 
-            x: [0, -40, 0],
-            y: [0, 60, 0],
-            scale: [1.1, 1, 1.1],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[140px]" 
-        />
+        {/* Subtle Vignette for Depth */}
+        <div className="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.1)]"></div>
 
-        {/* Subtle Grid Overlay */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        {/* Vertical Rule (Like a Newspaper Column) */}
+        <div className="absolute left-[10%] top-0 bottom-0 w-[1px] bg-[#2b2b2b]/5"></div>
+        <div className="absolute right-[10%] top-0 bottom-0 w-[1px] bg-[#2b2b2b]/5"></div>
       </div>
 
-      {/* 💠 Main Auth Container */}
+      {/* 💠 Content Container */}
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[440px] px-6"
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative z-10 w-full max-w-[480px] px-4"
       >
-        {/* Outer Glow Wrapper */}
-        <div className="relative group">
-          {/* Animated Gradient Border (Bento Feel) */}
-          <div className="absolute -inset-[1px] bg-gradient-to-r from-zinc-800 via-zinc-400/20 to-zinc-800 rounded-[24px] opacity-100 transition-opacity" />
-          
-          {/* Inner Card Content */}
-          <div className="relative bg-[#080808]/90 border border-white/5 backdrop-blur-[40px] rounded-[23px] p-10 shadow-[0_0_80px_-15px_rgba(0,0,0,0.5)]">
+        {/* The "Pressed Paper" Card */}
+        <div className="bg-[#f4f1ea] border border-[#2b2b2b]/10 rounded-sm p-1 shadow-[20px_20px_60px_#d1cfc5,-20px_-20px_60px_#ffffff]">
+          <div className="border-2 border-[#2b2b2b] p-8 md:p-12 relative">
+            {/* Corner Accents */}
+            <div className="absolute top-2 left-2 w-2 h-2 bg-[#2b2b2b]"></div>
+            <div className="absolute top-2 right-2 w-2 h-2 bg-[#2b2b2b]"></div>
+            <div className="absolute bottom-2 left-2 w-2 h-2 bg-[#2b2b2b]"></div>
+            <div className="absolute bottom-2 right-2 w-2 h-2 bg-[#2b2b2b]"></div>
+            
             {children}
           </div>
         </div>
 
-        {/* System Status Footer */}
-        <div className="mt-8 flex items-center justify-center gap-4">
-          <div className="h-[1px] w-8 bg-zinc-800" />
-          <span className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-medium">
-            Authorized Personnel Only
-          </span>
-          <div className="h-[1px] w-8 bg-zinc-800" />
+        {/* Footer Meta */}
+        <div className="mt-8 flex flex-col items-center gap-2 opacity-40">
+           <div className="h-[1px] w-full bg-[#2b2b2b]"></div>
+           <div className="flex justify-between w-full text-[9px] font-bold uppercase tracking-widest text-[#2b2b2b]">
+              <span>Identity_Protocol_Secure</span>
+              <span>© 2026 CodeMapers</span>
+           </div>
         </div>
       </motion.div>
-
-      {/* Floating Decorative Elements */}
-      <div className="absolute top-10 left-10 text-zinc-800 rotate-90 text-[10px] tracking-tighter hidden md:block">
-        ANTIGRAVITY_CORE_V2
-      </div>
     </div>
   );
 }

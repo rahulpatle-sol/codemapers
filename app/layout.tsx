@@ -63,6 +63,7 @@ export default function RootLayout({
           antialiased bg-[#f4f1ea] selection:bg-amber-500 selection:text-black overflow-x-hidden
         `}
       >
+        suppressHydrationWarning
         {/* Retro Screen Effect Overlay */}
         <Scanlines />
 
