@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer components {
+  .border-glow:focus {
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+  }
+}
