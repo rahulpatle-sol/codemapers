@@ -1,114 +1,59 @@
 "use client";
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Github, Rocket, Code2, Sparkles } from 'lucide-react';
+import { Terminal, Cpu, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-purple-500/30 overflow-hidden">
-      {/* Background Gradient Orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-900/20 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-900/20 blur-[120px]" />
-      </div>
-
-      {/* Navbar */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-2 font-bold text-xl tracking-tighter"
-        >
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-            <Code2 size={20} />
+    <div className="min-h-screen bg-[#f4f1ea] text-[#1a1a1a] font-serif pt-32 px-6">
+      <div className="max-w-7xl mx-auto border-x-2 border-black/10 px-4 md:px-12">
+        {/* Newspaper Header */}
+        <div className="border-b-4 border-black pb-6 text-center">
+          <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest border-b border-black mb-4">
+            <span>Vol. 001 // FEB 2026</span>
+            <span className="font-bold">The CodeMapers Daily</span>
+            <span>Est. Binary Era</span>
           </div>
-          CloudIDE.ai
-        </motion.div>
-        
-        <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
-          <Link href="#" className="hover:text-white transition-colors">Features</Link>
-          <Link href="#" className="hover:text-white transition-colors">Templates</Link>
-          <Link href="#" className="hover:text-white transition-colors">Pricing</Link>
+          <h1 className="text-[12vw] font-black uppercase tracking-tighter leading-none mb-4">SYSTEMS ONLINE</h1>
+          <div className="flex justify-between font-bold italic text-sm md:text-xl border-t-2 border-black pt-2">
+            <span>NEURAL ORCHESTRATION</span>
+            <span>ZERO LATENCY</span>
+            <span>CLOUD NATIVE</span>
+          </div>
         </div>
 
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="px-5 py-2 bg-white text-black rounded-full text-sm font-semibold hover:bg-gray-200 transition-colors"
-        >
-          Get Started
-        </motion.button>
-      </nav>
-
-      {/* Hero Section */}
-      <main className="relative z-10 max-w-7xl mx-auto px-8 pt-20 pb-32 flex flex-col items-center text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-xs text-purple-400 mb-8"
-        >
-          <Sparkles size={14} />
-          <span>New: AI-Powered Framework Scaffolding</span>
-        </motion.div>
-
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-6xl md:text-8xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-500"
-        >
-          Build your next big <br /> idea in the cloud.
-        </motion.h1>
-
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-gray-400 text-lg md:text-xl max-w-2xl mb-10 leading-relaxed"
-        >
-          A professional-grade IDE that runs in your browser. Deploy full-stack apps, 
-          manage assets, and code with AI context. No setup required.
-        </motion.p>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-col sm:flex-row gap-4"
-        >
-          <Link href="/login" className="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-all group">
-            <Rocket size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-            Start Coding Now
-          </Link>
-          <button className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-            <Github size={20} />
-            Continue with GitHub
-          </button>
-        </motion.div>
-
-        {/* Dashboard Preview Glassmorphism */}
-        <motion.div 
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-24 relative w-full aspect-video rounded-2xl border border-white/10 bg-white/5 backdrop-blur-3xl overflow-hidden group"
-        >
-           <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10" />
-           {/* Placeholder for IDE UI */}
-           <div className="flex h-full">
-              <div className="w-64 border-r border-white/10 p-4 flex flex-col gap-2">
-                 {[1,2,3].map(i => <div key={i} className="h-4 w-full bg-white/5 rounded" />)}
-              </div>
-              <div className="flex-1 p-8 text-left font-mono text-sm text-gray-500">
-                 <p className="text-purple-400">const</p> CloudIDE = () ={'>'} {'{'} <br />
-                 &nbsp;&nbsp;console.log(<span className="text-blue-400">"Welcome to the future"</span>); <br />
-                 {'}'}
-              </div>
-           </div>
-        </motion.div>
-      </main>
+        {/* Main Story */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 py-12 border-b-2 border-black">
+          <div className="md:col-span-8 border-r-2 border-black/10 pr-8">
+            <div className="h-96 bg-zinc-300 grayscale border-2 border-black relative overflow-hidden group">
+               <img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=2069" className="object-cover w-full h-full opacity-70 group-hover:scale-105 transition-transform duration-700" alt="Core" />
+               <div className="absolute inset-0 bg-amber-500/10 mix-blend-overlay" />
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black mt-6 leading-tight uppercase italic">
+              "The local machine is a cage," says anonymous architect.
+            </h2>
+            <p className="mt-6 text-xl leading-relaxed columns-1 md:columns-2 gap-8 first-letter:text-7xl first-letter:font-black first-letter:mr-3 first-letter:float-left">
+              In a world obsessed with 16GB RAM upgrades, one system has decided to move the entire consciousness of development into the cloud. CodeMapers is not just an IDE; it is a rebellion against hardware limitations. The system promises a future where the browser is the only operating system you will ever need.
+            </p>
+          </div>
+          
+          <div className="md:col-span-4 space-y-8">
+            <div className="bg-black text-[#f4f1ea] p-6 rounded-sm">
+              <h3 className="font-mono text-amber-500 mb-4 border-b border-white/20 pb-2 tracking-tighter underline uppercase font-bold">System_Status.log</h3>
+              <ul className="space-y-3 font-mono text-xs uppercase">
+                <li className="flex justify-between"><span>Edge Nodes</span><span className="text-green-500">[ONLINE]</span></li>
+                <li className="flex justify-between"><span>Neural Link</span><span className="text-green-500">[SYNCED]</span></li>
+                <li className="flex justify-between"><span>Hardware</span><span className="text-red-500">[OBSOLETE]</span></li>
+              </ul>
+              <Link href="/dashboard" className="block w-full mt-6 bg-amber-500 text-black text-center py-3 font-black hover:bg-white transition-colors uppercase">Enter Terminal</Link>
+            </div>
+            <div className="border-2 border-black p-4 italic">
+              <h4 className="font-bold border-b border-black mb-2 uppercase">Classifieds</h4>
+              <p className="text-sm">"Looking for developers who hate slow builds. Must love monochrome UI and lightning speed." - Apply at /pricing</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
