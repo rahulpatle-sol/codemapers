@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { printProjectReport } from '@/lib/agent/printer'; // Jo humne printer utility banayi
+import { printProjectReport } from '../lib/agent/printer'; // Jo humne printer utility banayi
 
 export function useAgent(projectId: string) {
   const [isWorking, setIsWorking] = useState(false);

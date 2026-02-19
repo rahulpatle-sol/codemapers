@@ -1,20 +1,26 @@
 import { createClient } from "@supabase/supabase-js";
-
 import jsPDF from 'jspdf';
+
+// Supabase credentials ko env se uthao
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const agentTools = {
   // --- DATABASE & FS TOOLS ---
   writeFile: async (projectId: string, path: string, content: string) => {
-    const supabase = createClient();
+    // FIXED: Ab yahan credentials pass kar diye hain
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    
     const { data, error } = await supabase
       .from('files')
       .upsert({ 
         project_id: projectId, 
-        name: path, // Note: Tune path split kiya tha, standard use karte hain
+        name: path, 
         content: content,
-        updated_at: new Date() 
+        updated_at: new Date().toISOString() // Standard ISO string use karo
       })
       .select();
+
     if (error) throw new Error(`Write failed: ${error.message}`);
     return `File ${path} written.`;
   },
