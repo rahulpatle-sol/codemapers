@@ -23,7 +23,7 @@ interface ProjectParams { id: string }
 interface FinalIDEProps { params: Promise<ProjectParams> }
 interface WebContainerInstance {
   fs: { mkdir: (path: string, options?: { recursive: boolean }) => Promise<void>; writeFile: (path: string, content: string) => Promise<void> };
-  spawn: (command: string) => Promise<any>;
+  spawn: (command: string, args?: string[], options?: any) => any;
   on: (event: string, callback: (...args: any[]) => void) => void;
   teardown?: () => Promise<void>;
 }
@@ -56,8 +56,11 @@ export default function FinalIDE({ params }: FinalIDEProps) {
   const [createName, setCreateName] = useState("");
   const [showBuildModal, setShowBuildModal] = useState(false);
   const [deviceMode, setDeviceMode] = useState<'none' | 'iphone' | 'android' | 'tablet' | 'laptop'>('none');
+  const [terminalHeight, setTerminalHeight] = useState(160);
   const terminalRef = useRef<any>(null);
   const autoSaveTimer = useRef<any>(null);
+  const dragRef = useRef<{ startY: number; startH: number } | null>(null);
+  const bootedRef = useRef(false);
 
   useEffect(() => {
     const typeFromUrl = new URLSearchParams(window.location.search).get('type');
@@ -118,7 +121,8 @@ export default function FinalIDE({ params }: FinalIDEProps) {
   };
 
   const bootSequence = useCallback(async () => {
-    if (!webContainer || !isReady || files.length === 0) return;
+    if (!webContainer || !isReady || files.length === 0 || bootedRef.current) return;
+    bootedRef.current = true;
     setIsBuilding(true);
     try {
       for (const file of files) {
@@ -126,27 +130,72 @@ export default function FinalIDE({ params }: FinalIDEProps) {
         if (dir) await webContainer.fs.mkdir(dir, { recursive: true });
         await webContainer.fs.writeFile(file.path, file.content);
       }
+
+      // Interactive shell for user commands
       const shell = await webContainer.spawn('jsh');
       shell.output.pipeTo(new WritableStream({ write(data) { terminalRef.current?.write(data); } }));
       const writer = shell.input.getWriter();
       setShellWriter(writer);
+
+      // Pipe output helper
+      const pipeOut = (p: any) => p.output.pipeTo(new WritableStream({ write(data) { terminalRef.current?.write(data); } }));
+
+      // Install deps
+      writer.write('echo "📦 Installing dependencies..."\n');
+      const install = await webContainer.spawn('npm', ['install']);
+      pipeOut(install);
+      await install.exit;
+
+      // Start dev server
+      writer.write('echo "🚀 Starting dev server..."\n');
       if (projectType === 'expo') {
         const projectName = new URLSearchParams(window.location.search).get('name') || 'Expo App';
         setPreviewUrl(`expo`);
-        await writer.write(`npm install && npx expo start\n`);
+        const server = await webContainer.spawn('npx', ['expo', 'start']);
+        pipeOut(server);
         webContainer.on('server-ready', (port: number, url: string) => {
           setExpoServerUrl(url);
           setIsBuilding(false);
         });
       } else {
         const isVite = projectType === 'vite' || files.some(f => f.content.includes('vite'));
-        await writer.write(isVite ? `npm install && npx vite\n` : `npm install && npm run dev\n`);
+        const server = await webContainer.spawn('npx', isVite ? ['vite'] : ['next', 'dev']);
+        pipeOut(server);
         webContainer.on('server-ready', (port: number, url: string) => { setPreviewUrl(url); setIsBuilding(false); });
       }
     } catch (err) { console.error("Boot Error:", err); setIsBuilding(false); }
-  }, [webContainer, isReady, files]);
+  }, [webContainer, isReady, files.length]);
 
   useEffect(() => { bootSequence(); }, [bootSequence]);
+
+  // ─── Keyboard shortcuts ───
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      switch (e.key) {
+        case '`': e.preventDefault(); setShowTerminal(p => !p); break;
+        case 'b': e.preventDefault(); setShowFileTree(p => !p); break;
+        case '\\': e.preventDefault(); setShowChat(p => !p); break;
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
+  // ─── Terminal drag resize ───
+  const onTerminalDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { startY: e.clientY, startH: terminalHeight };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const delta = dragRef.current.startY - ev.clientY;
+      const newH = Math.max(80, Math.min(600, dragRef.current.startH + delta));
+      setTerminalHeight(newH);
+    };
+    const onUp = () => { dragRef.current = null; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp, { once: true });
+  }, [terminalHeight]);
 
   const restartWebContainer = async () => {
     setRestarting(true);
@@ -320,6 +369,7 @@ export default function FinalIDE({ params }: FinalIDEProps) {
           <aside className="w-48 sm:w-56 border-r border-[#2a2a2a] bg-[#111111] shrink-0 flex flex-col">
             <div className="h-8 flex items-center justify-between px-3 border-b border-[#2a2a2a]">
               <span className="text-[9px] font-mono tracking-widest text-zinc-600 uppercase">Files</span>
+              <span className="text-[7px] text-zinc-800 font-mono">Ctrl+B</span>
               <div className="flex items-center gap-1">
                 <button onClick={openCreateFile} className="p-0.5 rounded hover:bg-[#2a2a2a] text-zinc-600 hover:text-zinc-300 transition-colors" title="New file"><FilePlus2 size={11} /></button>
                 <button onClick={openCreateFolder} className="p-0.5 rounded hover:bg-[#2a2a2a] text-zinc-600 hover:text-zinc-300 transition-colors" title="New folder"><FolderPlus size={11} /></button>
@@ -353,15 +403,23 @@ export default function FinalIDE({ params }: FinalIDEProps) {
 
           {/* Terminal */}
           {showTerminal ? (
-            <div className="h-32 sm:h-48 border-t border-[#2a2a2a] bg-[#0d0d0d] flex flex-col shrink-0">
-              <div className="h-7 flex items-center justify-between px-3 bg-[#181818] border-b border-[#2a2a2a]">
+            <div className="border-t border-[#2a2a2a] bg-[#0d0d0d] flex flex-col shrink-0" style={{ height: terminalHeight }}>
+              {/* Drag handle */}
+              <div
+                onMouseDown={onTerminalDragStart}
+                className="h-1.5 cursor-ns-resize bg-transparent hover:bg-indigo-500/30 active:bg-indigo-500/50 transition-colors shrink-0 relative -top-0.5 z-10"
+              />
+              <div className="h-7 flex items-center justify-between px-3 bg-[#181818] border-b border-[#2a2a2a] shrink-0">
                 <div className="flex items-center gap-2"><TermIcon size={12} className="text-zinc-500" /><span className="text-[9px] font-mono tracking-widest text-zinc-600 uppercase">Terminal</span></div>
-                <button onClick={() => setShowTerminal(false)} className="text-zinc-600 hover:text-zinc-300 transition-colors"><X size={11} /></button>
+                <div className="flex items-center gap-2">
+                  <span className="text-[7px] text-zinc-700 font-mono hidden sm:inline">Ctrl+`</span>
+                  <button onClick={() => setShowTerminal(false)} className="text-zinc-600 hover:text-zinc-300 transition-colors"><X size={11} /></button>
+                </div>
               </div>
-              <div className="flex-1 p-2"><Terminal onMount={(t: any) => { terminalRef.current = t; }} onData={(d: any) => shellWriter?.write(d)} /></div>
+              <div className="flex-1 p-2 min-h-0"><Terminal onMount={(t: any) => { terminalRef.current = t; }} onData={(d: any) => shellWriter?.write(d)} /></div>
             </div>
           ) : (
-            <button onClick={() => setShowTerminal(true)} className="h-6 bg-[#181818] border-t border-[#2a2a2a] flex items-center justify-center text-zinc-600 hover:text-zinc-300 text-[9px] font-mono tracking-widest uppercase shrink-0"><TermIcon size={10} className="mr-1.5" /> Terminal</button>
+            <button onClick={() => setShowTerminal(true)} className="h-6 bg-[#181818] border-t border-[#2a2a2a] flex items-center justify-center text-zinc-600 hover:text-zinc-300 text-[9px] font-mono tracking-widest uppercase shrink-0 gap-2"><TermIcon size={10} /> Terminal <span className="text-[7px] text-zinc-800 font-mono normal-case">Ctrl+`</span></button>
           )}
         </div>
 

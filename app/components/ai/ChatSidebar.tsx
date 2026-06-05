@@ -114,9 +114,12 @@ export default function ChatSidebar({ projectId, onAction, currentFiles, project
           <Sparkles size={12} className="text-indigo-400" />
           <span className="text-[10px] font-semibold text-indigo-400 tracking-wide">Agent</span>
         </div>
-        <button onClick={() => setShowApiKey(!showApiKey)} className="text-zinc-600 hover:text-zinc-300 transition-colors">
-          <Key size={12} />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[7px] text-zinc-700 font-mono hidden md:inline">Ctrl+\</span>
+          <button onClick={() => setShowApiKey(!showApiKey)} className="text-zinc-600 hover:text-zinc-300 transition-colors">
+            <Key size={12} />
+          </button>
+        </div>
       </div>
 
       {/* ─── API Key ─── */}
