@@ -131,36 +131,24 @@ export default function FinalIDE({ params }: FinalIDEProps) {
         await webContainer.fs.writeFile(file.path, file.content);
       }
 
-      // Interactive shell for user commands
+      // Single interactive shell — everything runs here
       const shell = await webContainer.spawn('jsh');
       shell.output.pipeTo(new WritableStream({ write(data) { terminalRef.current?.write(data); } }));
       const writer = shell.input.getWriter();
       setShellWriter(writer);
 
-      // Pipe output helper
-      const pipeOut = (p: any) => p.output.pipeTo(new WritableStream({ write(data) { terminalRef.current?.write(data); } }));
-
-      // Install deps
-      writer.write('echo "📦 Installing dependencies..."\n');
-      const install = await webContainer.spawn('npm', ['install']);
-      pipeOut(install);
-      await install.exit;
-
-      // Start dev server
-      writer.write('echo "🚀 Starting dev server..."\n');
+      // Boot: install deps then start dev server
       if (projectType === 'expo') {
         const projectName = new URLSearchParams(window.location.search).get('name') || 'Expo App';
         setPreviewUrl(`expo`);
-        const server = await webContainer.spawn('npx', ['expo', 'start']);
-        pipeOut(server);
+        writer.write('npm install && npx expo start\n');
         webContainer.on('server-ready', (port: number, url: string) => {
           setExpoServerUrl(url);
           setIsBuilding(false);
         });
       } else {
         const isVite = projectType === 'vite' || files.some(f => f.content.includes('vite'));
-        const server = await webContainer.spawn('npx', isVite ? ['vite'] : ['next', 'dev']);
-        pipeOut(server);
+        writer.write(isVite ? 'npm install && npx vite\n' : 'npm install && npm run dev\n');
         webContainer.on('server-ready', (port: number, url: string) => { setPreviewUrl(url); setIsBuilding(false); });
       }
     } catch (err) { console.error("Boot Error:", err); setIsBuilding(false); }
