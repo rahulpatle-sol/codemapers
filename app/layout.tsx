@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import Scanlines from "./components/Scanlines";
+import SiteShell from "./components/SiteShell";
 
-// Fonts Loading
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -22,14 +19,13 @@ const spaceMono = Space_Mono({
   subsets: ["latin"],
 });
 
-// SEO & Metadata Configuration
 export const metadata: Metadata = {
   title: {
     default: "CodeMapers | The AI-Orchestrated Cloud IDE",
     template: "%s | CodeMapers"
   },
   description: "Next-generation cloud IDE with neural orchestration. Build and deploy at the speed of thought with zero local setup.",
-  metadataBase: new URL('https://codemapers.com'), // Apni domain yahan daal dena
+  metadataBase: new URL('https://codemapers.com'),
   keywords: ["Cloud IDE", "AI Code Editor", "Online Compiler", "Neural Coding", "CodeMapers"],
   authors: [{ name: "Rahul Patle" }],
   openGraph: {
@@ -54,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
         className={`
           ${geistSans.variable} 
@@ -63,20 +59,7 @@ export default function RootLayout({
           antialiased bg-[#f4f1ea] selection:bg-amber-500 selection:text-black overflow-x-hidden
         `}
       >
-        suppressHydrationWarning
-        {/* Retro Screen Effect Overlay */}
-        <Scanlines />
-
-        {/* Header Navigation */}
-        <Navbar />
-        
-        {/* Dynamic Content Sections */}
-        <main className="relative z-10 min-h-screen">
-          {children}
-        </main>
-
-        {/* Global Footer */}
-        <Footer />
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );

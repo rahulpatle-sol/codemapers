@@ -1,35 +1,23 @@
-import { createClient } from "@supabase/supabase-js";
+import { query } from '../db';
 import jsPDF from 'jspdf';
 
-// Supabase credentials ko env se uthao
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
 export const agentTools = {
-  // --- DATABASE & FS TOOLS ---
   writeFile: async (projectId: string, path: string, content: string) => {
-    // FIXED: Ab yahan credentials pass kar diye hain
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
-    const { data, error } = await supabase
-      .from('files')
-      .upsert({ 
-        project_id: projectId, 
-        name: path, 
-        content: content,
-        updated_at: new Date().toISOString() // Standard ISO string use karo
-      })
-      .select();
+    const { rows } = await query(
+      `INSERT INTO files (project_id, name, content, path)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (project_id, path) DO UPDATE SET content = $3, updated_at = now()
+       RETURNING *`,
+      [projectId, path.split('/').pop() || path, content, path]
+    );
 
-    if (error) throw new Error(`Write failed: ${error.message}`);
+    if (!rows[0]) throw new Error('Write failed');
     return `File ${path} written.`;
   },
 
-  // --- PRINTER / REPORT TOOLS ---
   printProjectReport: async (projectName: string, docs: { prd: string, srs: string, logs: string }) => {
     const doc = new jsPDF();
     
-    // Page 1: Design
     doc.setFillColor(30, 30, 30);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255, 255, 255);
@@ -39,7 +27,6 @@ export const agentTools = {
     doc.text(`AI AGENT SYSTEM REPORT`, 20, 60);
     doc.text(`DATE: ${new Date().toLocaleDateString()}`, 20, 70);
 
-    // Page 2: PRD
     doc.addPage();
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(18);
@@ -48,7 +35,6 @@ export const agentTools = {
     const prdLines = doc.splitTextToSize(docs.prd || "No PRD generated.", 170);
     doc.text(prdLines, 20, 30);
 
-    // Page 3: SRS
     doc.addPage();
     doc.setFontSize(18);
     doc.text("2. SRS (Technical Specs)", 20, 20);

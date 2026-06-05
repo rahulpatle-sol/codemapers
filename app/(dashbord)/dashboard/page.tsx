@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Globe, Search, LogOut, Zap, X, Sparkles, ChevronRight, Box, Server, FolderCode } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -21,59 +20,60 @@ export default function DashboardPage() {
   const [isInitializing, setIsInitializing] = useState(false);
   
   const router = useRouter();
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   useEffect(() => {
     const fetchUserAndProjects = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
-        return;
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        if (!meData.user) {
+          router.push('/login');
+          return;
+        }
+        setUser(meData.user);
+
+        const projRes = await fetch('/api/projects');
+        const projData = await projRes.json();
+        setProjects(projData.projects || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-      setUser(user);
-
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (!error) setProjects(data || []);
-      setLoading(false);
     };
     fetchUserAndProjects();
   }, []);
 
-const handleCreate = async () => {
-  if (!projectName || !user) return;
-  setIsInitializing(true);
-  
-  const { data, error } = await supabase
-    .from('projects')
-    .insert([{ 
-      name: projectName, 
-      framework: selectedTemplate, // Check karo: DB mein 'framework' hi hai na?
-      user_id: user.id
-    }])
-    .select()
-    .single();
+  const handleCreate = async () => {
+    if (!projectName || !user) return;
+    setIsInitializing(true);
+    
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: projectName, type: selectedTemplate }),
+      });
+      const data = await res.json();
+      if (data.project) {
+        router.push(`/project/${data.project.id}?name=${data.project.name}&type=${data.project.type}`);
+      }
+    } catch (err) {
+      console.error("Create error:", err);
+    } finally {
+      setIsInitializing(false);
+    }
+  };
 
-  if (error) {
-    console.error("Supabase Error:", error.message);
-    setIsInitializing(false);
-  } else {
-    router.push(`/project/${data.id}?name=${data.name}&type=${data.framework}`);
-  }
-};
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  };
 
   if (loading) return <div className="h-screen bg-[#020202] flex items-center justify-center font-mono text-zinc-500 uppercase tracking-widest text-[10px]">Initializing_Core...</div>;
 
   return (
     <div className="min-h-screen bg-[#020202] text-zinc-300 relative overflow-x-hidden">
-      {/* Modal - New Architecture */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
@@ -101,7 +101,7 @@ const handleCreate = async () => {
 
       <nav className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#050505]">
         <span className="font-black italic uppercase text-white tracking-tighter">CodeMapers</span>
-        <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))} className="text-xs font-mono text-zinc-500 hover:text-white uppercase tracking-widest flex items-center gap-2"><LogOut size={14}/> Sign_Out</button>
+        <button onClick={handleLogout} className="text-xs font-mono text-zinc-500 hover:text-white uppercase tracking-widest flex items-center gap-2"><LogOut size={14}/> Sign_Out</button>
       </nav>
 
       <main className="max-w-7xl mx-auto p-12">

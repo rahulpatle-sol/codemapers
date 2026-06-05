@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createBrowserClient } from '@supabase/ssr';
 
 export async function POST(req: Request) {
   const { title, message, userId, type } = await req.json();

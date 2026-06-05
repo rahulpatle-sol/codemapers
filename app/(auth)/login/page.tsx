@@ -1,19 +1,10 @@
 "use client";
-import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { Github, Chrome, Hash } from 'lucide-react';
+import { Github, Chrome } from 'lucide-react';
 
 export default function LoginPage() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const handleLogin = (provider: 'github' | 'google') => {
-    supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
-    });
+    window.location.href = `/api/auth/${provider}`;
   };
 
   return (
