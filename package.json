@@ -14,6 +14,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@octokit/rest": "^22.0.1",
     "@webcontainer/api": "^1.6.1",
+    "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.2",
     "groq-sdk": "^0.37.0",
