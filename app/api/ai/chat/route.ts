@@ -2,6 +2,31 @@ import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { checkRateLimit } from "@/app/lib/rate-limiter";
 
+function buildSystemPrompt(projectType: string, currentFiles: any[]) {
+  const isExpo = projectType === 'expo';
+  const framework = isExpo ? 'React Native' : 'Frontend';
+  const uiRule = isExpo
+    ? 'Use React Native components (View, Text, StyleSheet, ScrollView, FlatList, etc). DO NOT use HTML tags (div, span, h1, p) or Tailwind CSS.'
+    : 'Use Tailwind CSS, Framer Motion, and Lucide React. Designs must be "v0-level" (Modern, Dark Mode, Bento Grids).';
+  const filePrefix = isExpo ? 'app' : 'src/components';
+
+  return [
+    'You are a Senior ' + framework + ' Architect.',
+    'Current Files: ' + JSON.stringify(currentFiles),
+    'Project Type: ' + (projectType || 'next'),
+    '',
+    'RULES:',
+    '1. ' + uiRule,
+    '2. Return ONLY this JSON structure:',
+    '{',
+    '  "message": "Explain what you built",',
+    '  "files": [{ "path": "' + filePrefix + '/ComponentName.tsx", "content": "..." }],',
+    '  "commands": []',
+    '}',
+    '3. File paths must start with "app/" for Expo, "src/" for Next/Vite.',
+  ].join('\n');
+}
+
 export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const { allowed, remaining, resetIn } = checkRateLimit(ip);
@@ -14,7 +39,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { prompt, history, currentFiles, apiKey } = await req.json();
+    const { prompt, history, currentFiles, projectType, apiKey } = await req.json();
 
     const groq = new Groq({ apiKey: apiKey || process.env.GROQ_API_KEY });
 
@@ -23,18 +48,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: `You are a Senior Frontend Architect. 
-          Current Files: ${JSON.stringify(currentFiles)}
-          
-          RULES:
-          1. Use Tailwind CSS, Framer Motion, and Lucide React.
-          2. Designs must be "v0-level" (Modern, Dark Mode, Bento Grids).
-          3. Return ONLY this JSON structure:
-          {
-            "message": "Explain what you built",
-            "files": [{ "path": "src/components/Hero.tsx", "content": "..." }],
-            "commands": ["npm install framer-motion lucide-react"]
-          }`
+          content: buildSystemPrompt(projectType, currentFiles)
         },
         ...history.map((m: any) => ({
           role: m.role === 'user' ? 'user' : 'assistant',

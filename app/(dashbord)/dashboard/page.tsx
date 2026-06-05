@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Globe, Search, LogOut, Zap, X, Sparkles, ChevronRight, Box, Server, FolderCode } from 'lucide-react';
+import { Plus, Globe, LogOut, Zap, X, Sparkles, ChevronRight, Box, FolderCode, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const TEMPLATES = [
@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [projectName, setProjectName] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("next");
   const [isInitializing, setIsInitializing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   const router = useRouter();
 
@@ -63,6 +64,14 @@ export default function DashboardPage() {
     } finally {
       setIsInitializing(false);
     }
+  };
+
+  const deleteProject = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingId(id);
+    await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+    setProjects(prev => prev.filter(p => p.id !== id));
+    setDeletingId(null);
   };
 
   const handleLogout = async () => {
@@ -115,7 +124,10 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {projects.map((p) => (
-            <div key={p.id} onClick={() => router.push(`/project/${p.id}`)} className="group p-8 bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all cursor-pointer">
+            <div key={p.id} onClick={() => router.push(`/project/${p.id}?type=${p.type}`)} className="group relative p-8 bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all cursor-pointer">
+              <button onClick={(e) => deleteProject(p.id, e)} disabled={deletingId === p.id} className="absolute top-4 right-4 p-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-30">
+                <Trash2 size={14} />
+              </button>
               <div className="p-3 bg-zinc-950 rounded-2xl w-fit border border-white/10 text-emerald-500 mb-6 group-hover:scale-110 transition-transform"><FolderCode size={24}/></div>
               <h3 className="text-xl font-black text-white uppercase italic tracking-tighter group-hover:text-emerald-400 transition-colors">{p.name}</h3>
               <p className="text-[10px] text-zinc-600 font-mono mt-2 uppercase tracking-widest">{p.type} // {new Date(p.created_at).toLocaleDateString()}</p>

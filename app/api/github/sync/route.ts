@@ -1,12 +1,14 @@
 import { Octokit } from "@octokit/rest";
 import { NextResponse } from "next/server";
+import { getGitHubToken } from "@/app/lib/auth-utils";
 
 export async function POST(req: Request) {
   try {
-    const { projectId, repoName, files, token } = await req.json();
+    const { projectId, repoName, files } = await req.json();
 
+    const token = await getGitHubToken();
     if (!token) {
-      return NextResponse.json({ error: "GitHub Token Missing" }, { status: 401 });
+      return NextResponse.json({ error: "Connect GitHub first" }, { status: 401 });
     }
 
     const octokit = new Octokit({ auth: token });

@@ -37,3 +37,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (result.rows.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ project: result.rows[0] });
 }
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { id } = await params;
+  await query('DELETE FROM files WHERE project_id = $1', [id]);
+  const { rowCount } = await query('DELETE FROM projects WHERE id = $1 AND user_id = $2', [id, user.id]);
+  if (rowCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ success: true });
+}

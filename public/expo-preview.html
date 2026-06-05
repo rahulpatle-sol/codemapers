@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expo Preview</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #0d0d0d;
+    color: #c0c0c0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .container { text-align: center; padding: 2rem; max-width: 400px; }
+  .phone {
+    width: 200px; height: 400px;
+    border: 3px solid #333; border-radius: 30px;
+    margin: 0 auto 1.5rem;
+    display: flex; align-items: center; justify-content: center;
+    background: #1a1a1a;
+    position: relative;
+  }
+  .phone::before {
+    content: ''; position: absolute; top: 8px;
+    width: 80px; height: 5px; background: #333; border-radius: 10px;
+  }
+  .phone-inner { padding: 2rem 1rem; text-align: center; }
+  .phone-inner h3 { color: #fff; font-size: 14px; margin-bottom: 4px; }
+  .phone-inner p { color: #666; font-size: 11px; }
+  h1 { font-size: 18px; color: #fff; margin-bottom: 4px; }
+  .sub { color: #666; font-size: 12px; margin-bottom: 1.5rem; }
+  #qrcode {
+    display: inline-block;
+    padding: 12px;
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #333;
+    margin: 0 auto 1rem;
+  }
+  #qrcode img, #qrcode canvas { display: block !important; margin: 0 auto; }
+  .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+  .steps { text-align: left; margin-top: 1.5rem; }
+  .steps li { font-size: 11px; color: #888; padding: 6px 0; border-bottom: 1px solid #222; list-style: none; }
+  .steps li::before { content: '→ '; color: #22c55e; }
+  a { color: #22c55e; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .build-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 1rem; }
+  .build-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid #333; background: #1a1a1a; color: #c0c0c0;
+    transition: all 0.2s;
+  }
+  .build-btn:hover { background: #2a2a2a; border-color: #22c55e; color: #fff; }
+  .build-btn.ios:hover { border-color: #6366f1; }
+  .build-btn.android:hover { border-color: #22c55e; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="phone">
+      <div class="phone-inner">
+        <h3 id="projectName">Expo App</h3>
+        <p>Built with CodeMapers</p>
+      </div>
+    </div>
+
+    <h1>Ready to Launch</h1>
+    <p class="sub">Scan with Expo Go or build for production</p>
+
+    <div id="qrcode"></div>
+    <p class="label">Scan QR with Expo Go</p>
+
+    <div class="build-buttons">
+      <button class="build-btn ios" onclick="startBuild('ios')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Build for iOS
+      </button>
+      <button class="build-btn android" onclick="startBuild('android')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Build for Android
+      </button>
+    </div>
+
+    <div class="steps">
+      <li>Download <a href="https://expo.dev/client" target="_blank">Expo Go</a> on your phone</li>
+      <li>Run <code style="background:#222;padding:1px 6px;border-radius:4px;font-size:10px;">npm run android</code> locally</li>
+      <li>Or push to GitHub and build with <a href="https://expo.dev/eas" target="_blank">EAS Build</a></li>
+      <li>Download the ZIP from the IDE toolbar</li>
+    </div>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get('name') || 'Expo App';
+    const expoUrl = params.get('url') || 'exp://exp.host/@local/' + name.toLowerCase().replace(/\s+/g, '-');
+
+    document.getElementById('projectName').textContent = name;
+
+    new QRCode(document.getElementById('qrcode'), {
+      text: expoUrl,
+      width: 160,
+      height: 160,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    function startBuild(platform) {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:100';
+      overlay.innerHTML = `
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:24px;max-width:360px;text-align:center">
+          <h3 style="color:#fff;font-size:14px;margin-bottom:8px">Build for ${platform === 'ios' ? 'iOS' : 'Android'}</h3>
+          <p style="color:#888;font-size:11px;margin-bottom:12px">To build this Expo app for ${platform.toUpperCase()}:</p>
+          <div style="text-align:left;font-size:11px;color:#aaa;line-height:1.8">
+            <p>1. Push code to GitHub using the IDE toolbar</p>
+            <p>2. Run <code style="background:#222;padding:1px 6px;border-radius:4px;color:#22c55e">npx eas build --platform ${platform}</code></p>
+            <p>3. Download the binary from Expo dashboard</p>
+          </div>
+          <button onclick="this.closest('[style*=\\'fixed\\']').remove()" style="margin-top:16px;padding:8px 20px;border-radius:8px;border:1px solid #333;background:#222;color:#fff;cursor:pointer;font-size:11px">Got it</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+  </script>
+</body>
+</html>

@@ -12,6 +12,7 @@ interface JWTPayload extends Record<string, unknown> {
   userId: string;
   email: string;
   name: string | null;
+  githubToken?: string;
 }
 
 export async function createToken(payload: JWTPayload): Promise<string> {
@@ -62,6 +63,19 @@ export async function getCurrentUser() {
   if (!payload) return null;
   const { rows } = await query('SELECT id, email, name, created_at FROM users WHERE id = $1', [payload.userId]);
   return rows[0] || null;
+}
+
+export async function getCurrentSession() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  const payload = await verifyToken(token);
+  return payload;
+}
+
+export async function getGitHubToken() {
+  const session = await getCurrentSession();
+  return session?.githubToken || null;
 }
 
 export async function findOrCreateUser(email: string, name: string | null): Promise<{ id: string; email: string; name: string | null }> {
