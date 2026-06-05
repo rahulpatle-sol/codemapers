@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { origin } = new URL(request.url);
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
+    redirect_uri: `${origin}/api/auth/callback`,
     response_type: 'code',
     scope: 'openid email profile',
     state: 'google',
