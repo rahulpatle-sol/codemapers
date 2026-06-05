@@ -87,9 +87,17 @@ export default function FinalIDE({ params }: FinalIDEProps) {
     if (!activeFile?.id) return;
     setSaving(true);
     await saveFile(activeFile.id, content);
+    // Sync to WebContainer for live preview HMR
+    if (webContainer && activeFile.path) {
+      try {
+        await webContainer.fs.writeFile(activeFile.path, content);
+      } catch (err) {
+        console.error("WebContainer write error:", err);
+      }
+    }
     setDirty(false);
     setSaving(false);
-  }, [activeFile, saveFile]);
+  }, [activeFile, saveFile, webContainer]);
 
   const handleEditorChange = useCallback((value: string | undefined) => {
     if (value !== undefined && activeFile?.id) {
@@ -231,7 +239,17 @@ export default function FinalIDE({ params }: FinalIDEProps) {
   const handleCreate = async () => {
     if (!createName) return;
     if (createType === 'file') {
-      await createFile(createName, '', createName);
+      const file = await createFile(createName, '', createName);
+      // Sync new file to WebContainer
+      if (webContainer && file?.path) {
+        try {
+          const dir = file.path.split('/').slice(0, -1).join('/');
+          if (dir) await webContainer.fs.mkdir(dir, { recursive: true });
+          await webContainer.fs.writeFile(file.path, file.content || '');
+        } catch (err) {
+          console.error("WebContainer write error:", err);
+        }
+      }
     }
     setShowCreateModal(false);
     setCreateName("");

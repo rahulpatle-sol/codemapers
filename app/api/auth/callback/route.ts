@@ -64,6 +64,7 @@ export async function GET(request: Request) {
         userEmail = emails.find((e: any) => e.primary)?.email || emails[0]?.email;
       }
     } else if (state === 'google') {
+      const { origin } = new URL(request.url);
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -71,7 +72,7 @@ export async function GET(request: Request) {
           code,
           client_id: process.env.GOOGLE_CLIENT_ID!,
           client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-          redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
+          redirect_uri: `${origin}/api/auth/callback`,
           grant_type: 'authorization_code',
         }),
       });
