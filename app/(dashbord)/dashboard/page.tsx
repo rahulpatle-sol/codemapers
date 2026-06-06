@@ -58,6 +58,8 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.project) {
         router.push(`/project/${data.project.id}?name=${data.project.name}&type=${data.project.type}`);
+      } else {
+        console.error("Project creation failed:", data);
       }
     } catch (err) {
       console.error("Create error:", err);

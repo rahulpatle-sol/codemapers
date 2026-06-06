@@ -55,6 +55,9 @@ export default function FinalIDE({ params }: FinalIDEProps) {
   const [createType, setCreateType] = useState<'file' | 'folder'>('file');
   const [createName, setCreateName] = useState("");
   const [showBuildModal, setShowBuildModal] = useState(false);
+  const [showPushModal, setShowPushModal] = useState(false);
+  const [pushRepoName, setPushRepoName] = useState("");
+  const [pushIsPrivate, setPushIsPrivate] = useState(false);
   const [deviceMode, setDeviceMode] = useState<'none' | 'iphone' | 'android' | 'tablet' | 'laptop'>('none');
   const [terminalHeight, setTerminalHeight] = useState(160);
   const terminalRef = useRef<any>(null);
@@ -133,32 +136,46 @@ export default function FinalIDE({ params }: FinalIDEProps) {
     bootedRef.current = true;
     setIsBuilding(true);
     try {
-      for (const file of files) {
-        const dir = file.path.split('/').slice(0, -1).join('/');
+      // Write package.json first so npm install can start early
+      const pkgFile = files.find(f => f.path === 'package.json');
+      if (pkgFile) {
+        const dir = pkgFile.path.split('/').slice(0, -1).join('/');
         if (dir) await webContainer.fs.mkdir(dir, { recursive: true });
-        await webContainer.fs.writeFile(file.path, file.content);
+        await webContainer.fs.writeFile(pkgFile.path, pkgFile.content);
       }
 
-      // Single interactive shell — everything runs here
+      // Start shell + npm install while writing remaining files in parallel
       const shell = await webContainer.spawn('jsh');
       shell.output.pipeTo(new WritableStream({ write(data) { terminalRef.current?.write(data); } }));
       const writer = shell.input.getWriter();
       setShellWriter(writer);
 
-      // Boot: install deps then start dev server
+      // Write remaining files in background (don't await)
+      const writeRemaining = (async () => {
+        for (const file of files) {
+          if (file.path === 'package.json') continue;
+          const dir = file.path.split('/').slice(0, -1).join('/');
+          if (dir) await webContainer.fs.mkdir(dir, { recursive: true });
+          await webContainer.fs.writeFile(file.path, file.content);
+        }
+      })();
+
+      // Start install without waiting for remaining files
       if (projectType === 'expo') {
         const projectName = new URLSearchParams(window.location.search).get('name') || 'Expo App';
         setPreviewUrl(`expo`);
-        writer.write('npm install && npx expo start\n');
+        writer.write('npm install --loglevel=error && npx expo start --web\n');
         webContainer.on('server-ready', (port: number, url: string) => {
           setExpoServerUrl(url);
           setIsBuilding(false);
         });
       } else {
         const isVite = projectType === 'vite' || files.some(f => f.content.includes('vite'));
-        writer.write(isVite ? 'npm install && npx vite\n' : 'npm install && npm run dev\n');
+        writer.write(isVite ? 'npm install --loglevel=error && npx vite\n' : 'npm install --loglevel=error && npm run dev\n');
         webContainer.on('server-ready', (port: number, url: string) => { setPreviewUrl(url); setIsBuilding(false); });
       }
+
+      await writeRemaining;
     } catch (err) { console.error("Boot Error:", err); setIsBuilding(false); }
   }, [webContainer, isReady, files.length]);
 
@@ -205,15 +222,25 @@ export default function FinalIDE({ params }: FinalIDEProps) {
     else if (previewUrl && previewUrl !== 'expo') window.open(previewUrl, '_blank');
   };
 
+  const tryExpoWebPreview = () => {
+    if (!expoServerUrl) return;
+    // Try multiple possible Expo web paths
+    const candidates = [
+      expoServerUrl,
+      `${expoServerUrl}/index.html`,
+      `${expoServerUrl}?_platform=web`,
+    ];
+    window.open(candidates[0], '_blank');
+  };
+
   const connectGitHub = () => { window.location.href = `/api/auth/github/repo?project_id=${projectId}`; };
 
   const pushToGithub = async () => {
     setPushing(true); setPushResult(null);
     try {
-      const projectName = new URLSearchParams(window.location.search).get('name') || 'codemapers-project';
       const res = await fetch('/api/github/sync', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId, repoName: projectName, files }),
+        body: JSON.stringify({ projectId, repoName: pushRepoName, files, private: pushIsPrivate }),
       });
       const data = await res.json();
       if (data.success) setPushResult({ success: true, url: data.url });
@@ -285,7 +312,7 @@ export default function FinalIDE({ params }: FinalIDEProps) {
           </button>
 
           {/* GitHub */}
-          <button onClick={gitConnected ? pushToGithub : connectGitHub} disabled={pushing} className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-medium transition-all disabled:opacity-50">
+          <button onClick={gitConnected ? () => { const n = new URLSearchParams(window.location.search).get('name') || 'codemapers-project'; setPushRepoName(n); setShowPushModal(true); } : connectGitHub} disabled={pushing} className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-medium transition-all disabled:opacity-50">
             {pushing ? <Loader2 size={12} className="animate-spin" /> : <Github size={12} />}
             {pushing ? 'Pushing...' : gitConnected ? 'Push' : 'Git'}
           </button>
@@ -328,6 +355,43 @@ export default function FinalIDE({ params }: FinalIDEProps) {
             <div className="flex items-center gap-2"><Check size={12} /> Pushed!{' '}<a href={pushResult.url} target="_blank" className="underline hover:text-emerald-200">Open Repo</a></div>
           ) : `Push failed: ${pushResult.error}`}
           <button onClick={() => setPushResult(null)} className="ml-2 opacity-50 hover:opacity-100"><X size={10} /></button>
+        </div>
+      )}
+
+      {/* Push to GitHub modal */}
+      {showPushModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60" onClick={() => setShowPushModal(false)}>
+          <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-6 w-96 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-medium text-white mb-1">Push to GitHub</h3>
+            <p className="text-[10px] text-zinc-500 mb-4">Configure repo and push your code</p>
+
+            <label className="text-[10px] text-zinc-400 font-mono mb-1 block">Repository Name</label>
+            <input value={pushRepoName} onChange={e => setPushRepoName(e.target.value)}
+              type="text" placeholder="my-project"
+              className="w-full bg-black border border-[#333] rounded px-3 py-2 text-xs font-mono text-white outline-none focus:border-emerald-600 mb-4" />
+
+            <div className="flex gap-3 mb-4">
+              <button onClick={() => setPushIsPrivate(false)}
+                className={`flex-1 px-3 py-2 rounded-lg border text-[10px] font-medium transition-all ${!pushIsPrivate ? 'bg-emerald-600/20 border-emerald-600/50 text-emerald-400' : 'bg-zinc-900 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}>
+                <div className="text-xs mb-0.5">🌐 Public</div>
+                <div className="text-[8px] opacity-60">Anyone can view</div>
+              </button>
+              <button onClick={() => setPushIsPrivate(true)}
+                className={`flex-1 px-3 py-2 rounded-lg border text-[10px] font-medium transition-all ${pushIsPrivate ? 'bg-emerald-600/20 border-emerald-600/50 text-emerald-400' : 'bg-zinc-900 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}>
+                <div className="text-xs mb-0.5">🔒 Private</div>
+                <div className="text-[8px] opacity-60">Only you can see</div>
+              </button>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowPushModal(false)} className="px-4 py-1.5 rounded text-[11px] text-zinc-400 hover:text-white transition-colors">Cancel</button>
+              <button onClick={() => { setShowPushModal(false); pushToGithub(); }} disabled={!pushRepoName || pushing}
+                className="px-4 py-1.5 rounded bg-emerald-600 text-white text-[11px] font-medium hover:bg-emerald-500 transition-colors disabled:opacity-30 flex items-center gap-1.5">
+                {pushing ? <Loader2 size={12} className="animate-spin" /> : <Github size={12} />}
+                {pushing ? 'Pushing...' : 'Push to GitHub'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -467,10 +531,81 @@ export default function FinalIDE({ params }: FinalIDEProps) {
               <ExpoPreview projectName={new URLSearchParams(window.location.search).get('name') || 'Expo App'} url={expoServerUrl} />
             ) : deviceMode !== 'none' ? (
               <div className="flex-1 flex items-center justify-center bg-zinc-900 p-4 overflow-auto">
-                <div className={`bg-white overflow-hidden shadow-2xl transition-all ${deviceMode === 'iphone' ? 'rounded-[32px] border-4 border-zinc-700' : deviceMode === 'android' ? 'rounded-[24px] border-4 border-zinc-700' : deviceMode === 'tablet' ? 'rounded-[16px] border-4 border-zinc-700' : 'rounded-[8px] border border-zinc-600'}`}
-                  style={deviceMode === 'iphone' ? { width: 375, height: 812 } : deviceMode === 'android' ? { width: 412, height: 915 } : deviceMode === 'tablet' ? { width: 820, height: 1180 } : { width: 1280, height: 720 }}>
-                  <iframe src={previewUrl} className="w-full h-full" title="Device Preview" />
-                </div>
+                {deviceMode === 'iphone' ? (
+                  <div className="relative" style={{ width: 377, height: 814 }}>
+                    <div className="absolute inset-0 rounded-[44px] bg-gradient-to-b from-zinc-700 to-zinc-900 shadow-2xl" />
+                    <div className="absolute inset-[3px] rounded-[41px] bg-black overflow-hidden shadow-inner">
+                      {/* Dynamic Island */}
+                      <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[120px] h-[34px] bg-black rounded-full z-10 shadow-lg flex items-center justify-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-700" />
+                        <div className="w-5 h-1.5 rounded-full bg-zinc-800/60" />
+                      </div>
+                      {/* Speaker grille */}
+                      <div className="absolute top-[16px] left-1/2 -translate-x-1/2 w-[46px] h-[2px] bg-zinc-800 rounded-full z-20 opacity-60" />
+                      {/* Side buttons */}
+                      <div className="absolute -left-[2px] top-[140px] w-[2px] h-[60px] bg-zinc-600 rounded-r" />
+                      <div className="absolute -left-[2px] top-[210px] w-[2px] h-[50px] bg-zinc-600 rounded-r" />
+                      <div className="absolute -left-[2px] top-[270px] w-[2px] h-[50px] bg-zinc-600 rounded-r" />
+                      <div className="absolute -right-[2px] top-[160px] w-[2px] h-[70px] bg-zinc-600 rounded-l" />
+                      {/* Screen */}
+                      <div className="absolute inset-[6px] top-[52px] bottom-[6px] rounded-[36px] overflow-hidden bg-white">
+                        <iframe src={previewUrl} className="w-full h-full" title="iPhone Preview" style={{ border: 'none' }} />
+                      </div>
+                      {/* Home indicator */}
+                      <div className="absolute bottom-[8px] left-1/2 -translate-x-1/2 w-[134px] h-[5px] bg-white/80 rounded-full z-10" />
+                    </div>
+                  </div>
+                ) : deviceMode === 'android' ? (
+                  <div className="relative" style={{ width: 414, height: 917 }}>
+                    <div className="absolute inset-0 rounded-[32px] bg-gradient-to-b from-zinc-600 to-zinc-900 shadow-2xl" />
+                    <div className="absolute inset-[3px] rounded-[29px] bg-black overflow-hidden shadow-inner">
+                      {/* Punch hole camera top-left */}
+                      <div className="absolute top-[16px] left-[28px] w-[10px] h-[10px] bg-zinc-900 rounded-full z-10 border-2 border-zinc-800" />
+                      {/* Screen */}
+                      <div className="absolute inset-[6px] top-[6px] bottom-[6px] rounded-[24px] overflow-hidden bg-white">
+                        <iframe src={previewUrl} className="w-full h-full" title="Android Preview" style={{ border: 'none' }} />
+                      </div>
+                      {/* Navigation bar area */}
+                      <div className="absolute bottom-0 left-0 right-0 h-[36px] bg-black/80 flex items-center justify-center gap-8 z-10">
+                        <div className="w-[10px] h-[10px] rounded-full border-2 border-white/40" />
+                        <div className="w-[16px] h-[10px] border-b-2 border-l-2 border-r-2 border-white/40 rounded-b-sm" />
+                        <div className="w-[10px] h-[10px] border-2 border-white/40" />
+                      </div>
+                    </div>
+                  </div>
+                ) : deviceMode === 'tablet' ? (
+                  <div className="relative" style={{ width: 822, height: 1182 }}>
+                    <div className="absolute inset-0 rounded-[24px] bg-gradient-to-b from-zinc-600 to-zinc-800 shadow-2xl" />
+                    <div className="absolute inset-[3px] rounded-[21px] bg-black overflow-hidden shadow-inner">
+                      {/* Camera dot (top center, landscape) */}
+                      <div className="absolute top-[16px] left-1/2 -translate-x-1/2 w-[6px] h-[6px] bg-zinc-900 rounded-full z-10 border border-zinc-700" />
+                      {/* Screen */}
+                      <div className="absolute inset-[6px] top-[6px] bottom-[6px] rounded-[16px] overflow-hidden bg-white">
+                        <iframe src={previewUrl} className="w-full h-full" title="Tablet Preview" style={{ border: 'none' }} />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative" style={{ width: 1280, height: 750 }}>
+                    {/* Laptop screen */}
+                    <div className="absolute inset-0 rounded-t-[12px] bg-gradient-to-b from-zinc-700 via-zinc-800 to-zinc-900 shadow-2xl overflow-hidden">
+                      <div className="absolute inset-[3px] rounded-t-[10px] bg-black overflow-hidden">
+                        {/* Webcam */}
+                        <div className="absolute top-[6px] left-1/2 -translate-x-1/2 w-[3px] h-[3px] bg-zinc-900 rounded-full z-10" />
+                        {/* Screen */}
+                        <div className="absolute inset-[4px] top-[14px] bottom-0 overflow-hidden bg-white">
+                          <iframe src={previewUrl} className="w-full h-full" title="Laptop Preview" style={{ border: 'none' }} />
+                        </div>
+                      </div>
+                    </div>
+                    {/* Laptop base/keyboard */}
+                    <div className="absolute -bottom-[18px] left-1/2 -translate-x-1/2 w-[125%] h-[22px] bg-gradient-to-b from-zinc-700 to-zinc-800 rounded-b-[8px] shadow-lg">
+                      <div className="absolute -top-[2px] left-1/2 -translate-x-1/2 w-[96%] h-[3px] bg-zinc-600 rounded-full" />
+                      {/* Keyboard hint */}
+                      <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[40%] h-[4px] bg-zinc-600/30 rounded" />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <iframe src={previewUrl} className="w-full flex-1 bg-white" title="Preview" />

@@ -4,7 +4,7 @@ import { getGitHubToken } from "@/app/lib/auth-utils";
 
 export async function POST(req: Request) {
   try {
-    const { projectId, repoName, files } = await req.json();
+    const { projectId, repoName, files, private: isPrivate } = await req.json();
 
     const token = await getGitHubToken();
     if (!token) {
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       await octokit.repos.createForAuthenticatedUser({ 
         name: repoName, 
         auto_init: true,
+        private: isPrivate,
         description: "Created via CodeMapers AI IDE"
       });
       // Thoda wait taaki GitHub repo initialize kar le
